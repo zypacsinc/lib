@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<HTML>
+<HEAD>
+<meta http-equiv="Cache-control" content="no-cache"/>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache"/>
+<META HTTP-EQUIV="Expires" CONTENT="-1"/>
+<TITLE>BPSync Home</TITLE>
+
+<link rel="stylesheet" href="css/jquery.ui.all.css"/>
+<link type="text/css" rel="stylesheet" href="css/layout-default-latest.css" />
+<link rel="stylesheet" href="css/menu-style.css">
+<link rel="stylesheet" href="css/tkconnect.css">
+<link rel="stylesheet" href="css/jquery.ui.all.css">
+<link rel="stylesheet" href="css/jquery.ui.dialog.css">
+<link rel="stylesheet" href="css/ui.jqgrid.css">
+<link rel="stylesheet" href="css/grid.css">	
+<SCRIPT type="text/javascript" src="js/jquery-2.0.3.min.js"></SCRIPT>
+<script type="text/javascript" src="js/jquery-ui-1.10.3.min.js"></script>	
+<script type="text/javascript" src="js/jquery.sizes.js"></script>	
+<script type="text/javascript" src="js/jlayout.border.js"></script>	
+<script type="text/javascript" src="js/jquery.layout-1.3.js"></script>	
+
+<script type="text/javascript" src="js/hoverIntent.js"></script>
+<script type="text/javascript" src="js/moment.js"></script>
+<script type="text/javascript" src="js/marknote.js"></script>
+<script type="text/javascript" src="js/tkconnect.js"></script>
+<script type="text/javascript" src="js/webservices-min.js"></script>
+<script type="text/javascript" src="js/util-min.js"></script>
+<script type="text/javascript" src="js/tkgrid.js"></script>
+<SCRIPT type="text/javascript">
+ 
+	function toggleLiveResizing () {
+		$.each( $.layout.config.borderPanes, function (i, pane) {
+			var o = myLayout.options[ pane ];
+			o.livePaneResizing = !o.livePaneResizing;
+		});
+	};
+	
+	function toggleStateManagement ( skipAlert, mode ) {
+		if (!$.layout.plugins.stateManagement) return;
+
+		var options	= myLayout.options.stateManagement
+		,	enabled	= options.enabled // current setting
+		;
+		if ($.type( mode ) === "boolean") {
+			if (enabled === mode) return; // already correct
+			enabled	= options.enabled = mode
+		}
+		else
+			enabled	= options.enabled = !enabled; // toggle option
+
+		if (!enabled) { // if disabling state management...
+			myLayout.deleteCookie(); // ...clear cookie so will NOT be found on next refresh
+			if (!skipAlert)
+				alert( 'This layout will reload as the options specify \nwhen the page is refreshed.' );
+		}
+		else if (!skipAlert)
+			alert( 'This layout will save & restore its last state \nwhen the page is refreshed.' );
+	};
+	// set EVERY 'state' here so will undo ALL layout changes
+	// used by the 'Reset State' button: myLayout.loadState( stateResetSettings )
+	var stateResetSettings = {
+		north__size:		"false"
+	,	north__initClosed:	false
+	,	north__initHidden:	false
+	,	south__size:		"auto"
+	,	south__initClosed:	false
+	,	south__initHidden:	false
+	,	west__size:			0
+	,	west__initClosed:	false
+	,	west__initHidden:	false
+	,	east__size:			200
+	,	east__initClosed:	false
+	,	east__initHidden:	false
+	};
+
+	var myLayout;
+$(document).ready(function () {	
+	doLayout();
+	// check if session is valid
+	var ht = $('#centerlayout').height();
+	connectInit();
+	
+});
+	
+	function doLayout(){
+	// create the page-layout, which will ALSO create the tabs-wrapper child-layout
+		myLayout = $('body').layout({
+
+		//	reference only - these options are NOT required because 'true' is the default
+			closable:					true	// pane can open & close
+		,	resizable:					true	// when open, pane can be resized 
+		,	slidable:					true	// when closed, pane can 'slide' open over other panes - closes on mouse-out
+		,	livePaneResizing:			true
+
+		//	some resizing/toggling settings
+		,	north__slidable:			false	// OVERRIDE the pane-default of 'slidable=true'
+		,	north__togglerLength_closed: '100%'	// toggle-button is full-width of resizer-bar
+		,	north__spacing_closed:		20		// big resizer-bar when open (zero height)
+		,	south__resizable:			false	// OVERRIDE the pane-default of 'resizable=true'
+		,	south__spacing_open:		0		// no resizer-bar when open (zero height)
+		,	south__spacing_closed:		20		// big resizer-bar when open (zero height)
+		,	north__size:				92
+		,	north__maxSize:				92 // 25% of layout width
+		//	some pane-size settings
+		,	west__minSize:				00
+		,	east__size:					100
+		,	east__minSize:				10
+		,	east__maxSize:				.25 // 25% of layout width
+		,	center__minWidth:			100
+
+		//	some pane animation settings
+		,	west__animatePaneSizing:	false
+		,	west__fxSpeed_size:			"fast"	// 'fast' animation when resizing west-pane
+		,	west__fxSpeed_open:			1000	// 1-second animation when opening west-pane
+		,	west__fxSettings_open:		{ easing: "easeOutBounce" } // 'bounce' effect when opening
+		,	west__fxName_close:			"none"	// NO animation when closing west-pane
+
+		//	enable showOverflow on west-pane so CSS popups will overlap north pane
+		,	west__showOverflowOnHover:	true
+
+		//	enable state management
+		,	stateManagement__enabled:	true // automatic cookie load & save enabled by default
+
+		,	showDebugMessages:			true // log and/or display messages from debugging & testing code
+		});
+
+		// if there is no state-cookie, then DISABLE state management initially
+		var cookieExists = !$.isEmptyObject( myLayout.readCookie() );
+		if (!cookieExists) toggleStateManagement( true, false );
+		
+		// 'Reset State' button requires updated functionality in rc29.15+
+		if ($.layout.revision && $.layout.revision >= 0.032915)
+			$('#btnReset').show();
+ 	}
+</SCRIPT>
+</HEAD>
+<BODY>
+<div class="ui-layout-north" onmouseover="myLayout.allowOverflow('north')" onmouseout="myLayout.resetOverflow(this)">	
+	<div  id="mainheader" style="height:80px;width:100%;">
+	  <div  id="topsubheader" style="height:38px;width:100%;" class="top_gray">
+		<div  style="float:left;margin-left:6px;margin-right:10px;width:15%;">
+			<span class="titleclass">BP Sync</span>&nbsp;&nbsp;
+		</div>
+		<div  id="topheader" class="header" style="visibility:visible;">
+			
+			<!--div  class="topbutton" ><a  href="#" class="topmenu"   id="listsavedrecords"  onClick="javascript:getServiceList();" title="List of web services audit log">Services List</a></div-->
+
+			<div style="float:right;margin-right:15px;margin-left:15px;margin-top:2px;">
+				<div  class="topbutton" ><a  href="#" class="topmenu"  id="company" value="Settings" onClick="javascript:showCompanyDetails();" title="update company details">Settings</a></div>
+				<div id="companyinfo"  style="font-size:19px;font-weight:bold;float:right;width:250px;height:15px;color:#FF9900;margin-right:12px;margin-top:2px;text-align:center;" class="font13">KCP&amp;L </div>
+			</div>
+		</div>
+	  </div>	
+	  <div  id="subheader2" style="height:52px;" class="second_row">
+		<div id="excelheader" style="float:left;width:100%;height:27px;">
+			<div  style="float:left;width:800px;height:20px;font-family:Arial;font-size:12px;">
+			<div  style="float:left;width:25px;">&nbsp;</div>
+			<div  class="topbutton" ><a href="#" class="buttonmenu"  title="Get a list of BP's from the Co. to work with."   name="bplist" id="bplist" value="BP List" onClick="javascript:getBPList('yes');">BP List</a></div>
+			  <!--div  style="float:left;width:30px;height:20px;font-family:Arial;font-size:13px;margin-left:20px;margin-top:4px;"><b>Name</b></div-->
+			  <div  style="float:left;width:600px;height:20px;margin-left:26px;margin-top:4px;"   id="selectedname">&nbsp;</div>
+			</div>
+			<div id="excelsubheader" style="float:left;">
+				<div id="importexcel" style="float:left;width:105px;height:20px;padding-top:4px;"><a href="#" class="buttonmenu" title="Imports Excel Data" onclick="javascript:importExcel();">Import Excel</a></div>
+				<div id="exportexcel" style="float:left;width:105px;height:20px;padding-top:4px;"><a href="#" class="buttonmenu" title="Export BP template" onclick="javascript:downloadExcel();">Export Excel</a></div>
+				<div id="validatedata" style="float:left;width:95x;height:20px;padding-top:4px;"><a href="#" class="buttonmenu" title="Validate Grid Data" onclick="javascript:validateData();">Validate</a></div>
+				<div id="exportdata" style="float:left;width:100px;height:20px;padding-top:4px;"><a href="#" class="buttonmenu" title="Exports data from the grid" onclick="javascript:downloadExcelData();">Export Data</a></div>
+				<div id="runservice" style="float:left;width:130px;height:20px;padding-top:4px;"><a href="#" class="buttonmenu" title="Creates or Updates BP records in Unifier" onclick="javascript:showRunDialog();">Run Web Service</a></div>
+			</div>
+		</div>
+		<div id="bpsubheader2" style="float:left;width:100%;height:24px;">
+			<div id="bpsubheader" style="float:left;width:800px;height:24px;">			
+			<div  style="padding-left:29px;;float:left;" ><a href="#" class="buttonmenu"  title="click to get a list of projects/shell to work with." name="projectlist" id="projectlist" value="Project/Shell List" onClick="javascript:getProjectList();">Project List</a></div><div style="width:450px;float:left;" id="subdetailheader" class="font13b">&nbsp;</div>
+			
+			</div>
+			<div id="savedata" style="float:left;width:95px;height:20px;padding-top:4px;"><a href="#" class="buttonmenu" title="Save the grid data to file" onclick="javascript:showSaveDialog('save_data');">Save Data</a></div>
+			<div  class="topbutton" ><a  href="#" class="buttonmenu"   id="listsavedrecords"  onClick="javascript:listSavedFiles();" title="List of all saved data files">List Saved Files</a></div>
+			<div id="unifierstatus" style="float:left;width:500px;" class="topbutton">&nbsp;
+			</div>
+		</div>		
+	   </div>		
+	  
+	</div>
+</div>
+<DIV class="ui-layout-east">
+    <div id="webservicesdivouter" style="width:99%;background-color:#f1f1f1;height:99%;">
+		<div id="webservicesdiv" style="float:left;width:100%;height:99%;margin-top:10px;"></div>
+	</div>
+</DIV>
+<div class="ui-layout-center" id="centerlayout">
+	<div id="centerdiv" style="width:100%;height:99%;" >
+	</div>
+	<div id="dialog" title="Basic dialog" style="display:none;">
+		<p>The dialog window can be moved, resized and closed with the 'x' icon.</p>
+	</div>
+	<div id="dialog1" title="Generated XML" ></div>
+	<div id="createulinkdialog"  style="overflow-y:auto;"></div>
+	<input type="hidden" id="actiontype" name="actiontype" value=""/>
+	<input type="hidden" id="methodid" name="methodid" value=""/>
+	<img src="images/blueloading.gif" id="loading-indicator" style="display:none" />
+	<div id="divmoveline" style="visibility:hidden;position:absolute;top:0px;width:5px;height:40px;background-color:darkgray;borderLeft:0px;">
+		</div>
+</div>	
+
+
+<form id="uploadform" name="uploadform"  method="get"  enctype="multipart/form-data" target="connectframe">
+	<div id="morefiledata" >
+	</div>
+	<div id="uploaddataid">
+	 <input type="hidden" id="fileactiontype" name="fileactiontype" value="excel_data"/>
+	  <input type="hidden" id="fileadatatype" name="fileadatatype" value="fileupload"/>
+	 <input type="hidden" id="f_filename" name="f_filename" value=""/>
+	<input type="file" id="f_fileclick" name="f_fileclick" style="display: none" onChange="uploadFileData()" />
+	</div>
+</form>
+
+<form id="postform" name="postform" method="post"  target="connectframe">
+	<div id="postid"></div>
+</form>
+
+<iframe  id="connectframe" name="connectframe" src="jsp/blank.html" width="0" height="0">
+
+</iframe>
+</BODY>
+</HTML>
